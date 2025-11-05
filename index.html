@@ -13,10 +13,9 @@
             flex-direction: column; 
             justify-content: center;
             align-items: center;
-            /* Height 100vh removed to better embed in a page */
+            height: 100vh; /* Fill the whole screen */
             margin: 0;
-            padding: 20px 0; /* Add some padding for when it's embedded */
-            overflow-x: hidden; /* Prevent horizontal scroll on small screens */
+            overflow: hidden; /* Prevent scrollbars */
         }
         
         /* Scaler container removed */
@@ -28,38 +27,30 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             flex-shrink: 0;
 
-            /* === NEW SCALING RULES === */
-            width: 100%;           /* Make it fill its container */
-            max-width: 1200px;     /* But don't let it get bigger than the game's art */
-            margin: 0 auto;        /* Center it */
+            /* === NEW: Auto-scaling transform === */
+            transform: scale(var(--game-scale, 1.0));
+            transform-origin: center center;
         }
-        
         canvas {
             background-color: #0b1a33; /* Dark navy blue sky */
             border-bottom: 2px solid #333;
-
-            /* === NEW SCALING RULES === */
-            width: 100%;  /* Fill the container's width */
-            height: auto; /* Maintain aspect ratio */
             display: block; /* Fixes potential extra space issues */
         }
-
         #ui {
             display: flex;
             justify-content: space-between;
-            align-items: center; /* Better vertical alignment */
+            align-items: center;
             padding: 15px;
             background-color: #ffffff;
             border-bottom: 2px solid #eee;
 
-            /* === NEW SCALING RULES === */
-            width: 100%;           /* Fill the container's width */
-            box-sizing: border-box;  /* Make padding part of the 100% width */
+            /* === REVERTED: Back to fixed width === */
+            width: 1170px; /* 1200px canvas - 2*15px padding */
+            box-sizing: content-box; 
         }
-
         #definition-box {
             flex-basis: 75%;
-            padding-right: 15px; /* Add spacing between elements */
+            padding-right: 15px; 
         }
         #definition-text {
             margin: 5px 0 0 0;
@@ -72,7 +63,7 @@
             font-size: 1.4em;
             font-weight: bold;
             color: #2a7a2a;
-            flex-shrink: 0; /* Prevent score from wrapping */
+            flex-shrink: 0; 
         }
     </style>
 </head>
@@ -88,7 +79,7 @@
                 Score: <span id="score">0</span>
             </div>
         </div>
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" width="1200" height="700"></canvas>
     </div>
 
     <script>
@@ -98,13 +89,13 @@
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
             
-            // === NEW: Set internal resolution ===
-            canvas.width = 1200;
-            canvas.height = 700;
-            // === END NEW ===
+            // Internal resolution is set by the canvas tag now
             
             const definitionText = document.getElementById('definition-text');
             const scoreDisplay = document.getElementById('score');
+            
+            // === NEW: Get game container for scaling ===
+            const gameContainer = document.getElementById('game-container');
             
             let score = 0;
             let gravity = 0.6;
@@ -191,9 +182,8 @@
             };
 
             // --- Platforms ---
-            // This list's X values will be randomized each round
             const masterPlatformsList = [
-                { x: 0, y: 680, width: canvas.width, height: 20 }, // Ground (x won't be randomized)
+                { x: 0, y: 680, width: canvas.width, height: 20 }, // Ground
                 { x: 150, y: 550, width: 250, height: 15 },
                 { x: 500, y: 450, width: 300, height: 15 },
                 { x: 150, y: 320, width: 200, height: 15 }, 
@@ -571,12 +561,29 @@
                 requestAnimationFrame(gameLoop);
             }
 
-            // --- SCALER LOGIC REMOVED ---
-            
+            // --- === NEW: Dynamic Scaling Function === ---
+            function resizeGame() {
+                const totalHeight = 700 + 75; // Game height (700) + UI height (approx 75)
+                const totalWidth = 1200;
+
+                const scaleX = window.innerWidth / totalWidth;
+                const scaleY = window.innerHeight / totalHeight;
+                
+                // Find the smallest scale factor to fit the game
+                const scale = Math.min(scaleX, scaleY);
+                
+                // Set the CSS variable to scale the game container
+                gameContainer.style.setProperty('--game-scale', scale);
+            }
+
             // --- Start Game ---
             createStars(); 
             loadNewQuestion();
             gameLoop(); 
+            
+            // --- === NEW: Event Listeners for Scaling === ---
+            window.addEventListener('resize', resizeGame);
+            resizeGame(); // Call it once on load
 
         });
     </script>
