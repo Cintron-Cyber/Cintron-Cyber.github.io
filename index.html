@@ -13,9 +13,10 @@
             flex-direction: column; 
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            /* Height 100vh removed to better embed in a page */
             margin: 0;
-            overflow: auto; 
+            padding: 20px 0; /* Add some padding for when it's embedded */
+            overflow-x: hidden; /* Prevent horizontal scroll on small screens */
         }
         
         /* Scaler container removed */
@@ -26,22 +27,39 @@
             border: 2px solid #333;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             flex-shrink: 0;
+
+            /* === NEW SCALING RULES === */
+            width: 100%;           /* Make it fill its container */
+            max-width: 1200px;     /* But don't let it get bigger than the game's art */
+            margin: 0 auto;        /* Center it */
         }
+        
         canvas {
             background-color: #0b1a33; /* Dark navy blue sky */
             border-bottom: 2px solid #333;
+
+            /* === NEW SCALING RULES === */
+            width: 100%;  /* Fill the container's width */
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Fixes potential extra space issues */
         }
+
         #ui {
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Better vertical alignment */
             padding: 15px;
             background-color: #ffffff;
             border-bottom: 2px solid #eee;
-            width: 1170px; /* 1200px canvas - 2*15px padding */
-            box-sizing: content-box; 
+
+            /* === NEW SCALING RULES === */
+            width: 100%;           /* Fill the container's width */
+            box-sizing: border-box;  /* Make padding part of the 100% width */
         }
+
         #definition-box {
             flex-basis: 75%;
+            padding-right: 15px; /* Add spacing between elements */
         }
         #definition-text {
             margin: 5px 0 0 0;
@@ -54,6 +72,7 @@
             font-size: 1.4em;
             font-weight: bold;
             color: #2a7a2a;
+            flex-shrink: 0; /* Prevent score from wrapping */
         }
     </style>
 </head>
@@ -69,7 +88,7 @@
                 Score: <span id="score">0</span>
             </div>
         </div>
-        <canvas id="gameCanvas" width="1200" height="700"></canvas>
+        <canvas id="gameCanvas"></canvas>
     </div>
 
     <script>
@@ -78,6 +97,12 @@
             // --- Setup ---
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
+            
+            // === NEW: Set internal resolution ===
+            canvas.width = 1200;
+            canvas.height = 700;
+            // === END NEW ===
+            
             const definitionText = document.getElementById('definition-text');
             const scoreDisplay = document.getElementById('score');
             
@@ -353,57 +378,45 @@
                 });
             }
 
-
-            // --- === NEW HELPER FUNCTION === ---
-            // Checks if two platforms are horizontally overlapping or too close
-            // (We'll add a 50px buffer)
+            // --- HELPER FUNCTION ---
             function isHorizontallyOverlapping(plat1, plat2, buffer = 50) {
                 return plat1.x < plat2.x + plat2.width + buffer &&
                        plat1.x + plat1.width + buffer > plat2.x;
             }
-            // --- END NEW HELPER ---
 
-
-            // --- === UPDATED: loadNewQuestion (now prevents platform overlap) === ---
+            // --- Game Logic ---
             function loadNewQuestion() {
                 wordsOnScreen = [];
 
-                // === NEW: Randomize Platform X-Positions (with collision check) ===
-                // We start at i = 1 to skip the ground (index 0)
+                // === Randomize Platform X-Positions (with collision check) ===
                 for (let i = 1; i < masterPlatformsList.length; i++) {
                     const plat = masterPlatformsList[i];
                     
-                    let retryCount = 0; // Failsafe
-                    while (true) { // Keep trying until we find a good spot
-                        // Give it a new random X
+                    let retryCount = 0; 
+                    while (true) { 
                         plat.x = 100 + Math.random() * (canvas.width - 200 - plat.width);
                         
                         let isIntersecting = false;
-                        // Check against all *previously placed* platforms (j < i)
                         for (let j = 1; j < i; j++) {
                             const otherPlat = masterPlatformsList[j];
-                            
-                            // Only check for overlap if Y levels are close
                             if (Math.abs(plat.y - otherPlat.y) < 100) { 
                                 if (isHorizontallyOverlapping(plat, otherPlat)) {
                                     isIntersecting = true;
-                                    break; // Stop checking
+                                    break; 
                                 }
                             }
                         }
-
                         if (!isIntersecting) {
-                            break; // Found a good spot!
+                            break; 
                         }
-
                         retryCount++;
                         if (retryCount > 50) {
                             console.error("Could not place platform, breaking loop.");
-                            break; // Failsafe to prevent infinite loop
+                            break; 
                         }
                     }
                 }
-                // === END NEW ===
+                // === END RANDOMIZE ===
 
                 const correctIndex = Math.floor(Math.random() * riskWords.length);
                 currentQuestion = riskWords[correctIndex];
@@ -419,7 +432,6 @@
                     numDecoys = 3;         // 1 correct + 3 wrong = 4 campfires
                 }
 
-                // Get decoys
                 const decoys = [];
                 while (decoys.length < numDecoys && decoys.length < riskWords.length - 1) {
                     const decoyIndex = Math.floor(Math.random() * riskWords.length);
@@ -428,19 +440,14 @@
                     }
                 }
                 
-                // Get all spawnable platforms (which are now randomized) and shuffle them
                 const allSpawnPlatforms = [...masterPlatformsList].slice(1); 
                 let shuffledPlatforms = allSpawnPlatforms.sort(() => 0.5 - Math.random());
-                // Select the number of platforms we need for this difficulty
                 const spawnPlatforms = shuffledPlatforms.slice(0, numPlatformsToUse);
 
-                // Create list of words to place (1 correct + decoys)
                 const wordsToPlace = [ { text: currentQuestion.word, isCorrect: true } ];
                 decoys.forEach(d => wordsToPlace.push({ text: d.word, isCorrect: false }));
-                // Shuffle the words
                 wordsToPlace.sort(() => 0.5 - Math.random());
                 
-                // Place one word on each selected platform
                 for (let i = 0; i < spawnPlatforms.length; i++) {
                     const plat = spawnPlatforms[i];
                     const word = wordsToPlace[i];
