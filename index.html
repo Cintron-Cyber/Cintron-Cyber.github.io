@@ -98,7 +98,7 @@
             let isRoundActive = true;
             let stars = [];
             
-            // --- Game Content: Cybersecurity Risks ---
+            // --- === UPDATED: Game Content (New Words) === ---
             const riskWords = [
                 {
                     word: "Phishing",
@@ -150,19 +150,20 @@
                 },
                 {
                     word: "IoT",
-                    definition: "A network of physical devices that are vulnerable to attacks."
+                    definition: "A network of physical devices (Internet of Things) that are vulnerable to attacks."
                 },
                 {
                     word: "Network Security",
                     definition: "The practice of protecting a computer network from intruders, whether targeted or opportunistic."
                 },
+                // --- NEW WORDS ADDED HERE ---
                 {
                     word: "Confidentiality",
                     definition: "Keeping data secret."
                 },
                 {
                     word: "Integrity",
-                    definition: "Keeping data Keeping data accurate."
+                    definition: "Keeping data accurate."
                 },
                 {
                     word: "Availability",
@@ -199,18 +200,15 @@
                 { x: 650, y: 320, width: 180, height: 15 } 
             ];
 
-            // --- === UPDATED: Keydown Handler === ---
+            // --- Keydown Handler ---
             document.addEventListener('keydown', (e) => {
                 
-                // --- NEW SCROLL PREVENTION ---
-                // List of keys our game uses that also scroll the page
+                // --- SCROLL PREVENTION ---
                 const gameKeys = [' ', 'Spacebar', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-
-                // If the pressed key is in our list, stop the browser's default action
                 if (gameKeys.includes(e.key)) {
                     e.preventDefault();
                 }
-                // --- END NEW ---
+                // --- END ---
 
                 if (e.key === ' ' || e.key === 'Spacebar') {
                     let didInteract = false;
@@ -222,8 +220,6 @@
                             player.y + player.height > word.y) {
                             
                             if (!player.isJumping && isRoundActive) { 
-                                // e.preventDefault() was already here, but the one above
-                                // makes this redundant (which is fine).
                                 handleWordCollection(word); 
                                 didInteract = true;
                                 break; 
@@ -580,10 +576,9 @@
                 requestAnimationFrame(gameLoop);
             }
 
-            // --- === NEW: Dynamic Scaling Function === ---
+            // --- Dynamic Scaling Function ---
             function resizeGame() {
                 // This is the game's total fixed size including the UI
-                // UI height is approx 75px, but let's account for padding/border
                 const gameHeight = 700 + document.getElementById('ui').offsetHeight; 
                 const gameWidth = 1200;
 
@@ -602,7 +597,7 @@
             loadNewQuestion();
             gameLoop(); 
             
-            // --- === NEW: Event Listeners for Scaling === ---
+            // --- Event Listeners for Scaling ---
             window.addEventListener('resize', resizeGame);
             // We must wait a tiny bit for the UI to be rendered to get its height
             setTimeout(resizeGame, 100); // Call it once on load
